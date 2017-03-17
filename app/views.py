@@ -48,6 +48,7 @@ def model_status():
     if not clearwater_started:
         response = {'msg': ('Clearwater is not found, '
                             'it maybe not started or there is some error.')}
+        response['vnf_alive'] = False
     else:
         cmd = 'juju status | grep idle | wc -l'
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
@@ -55,10 +56,14 @@ def model_status():
         while p.poll() is None:
             line = p.stdout.readline().rstrip()
             if str(line) == '7':
-                response = {'msg': 'Clearwater has fully started'}
+                response = {
+                                'msg': 'Clearwater has fully started',
+                                'vnf_alive': True
+                            }
             elif line:
                 response = {'msg': '%s out of 7 nodes have started' %
                             str(line)}
+                response['vnf_alive'] = False
 
     resp = make_response(jsonify(response))
     return resp
