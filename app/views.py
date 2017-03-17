@@ -41,7 +41,7 @@ def model_status():
     clearwater_started = False
     while p.poll() is None:
         line = p.stdout.readline().rstrip()
-        logger.debug(line)
+        print(line)
         if re.search('clearwater', line):
             clearwater_started = True
             break
@@ -56,7 +56,7 @@ def model_status():
             line = p.stdout.readline().rstrip()
             if str(line) == '7':
                 response = {'msg': 'Clearwater has fully started'}
-            else:
+            elif line:
                 response = {'msg': '%s out of 7 nodes have started' %
                             str(line)}
 
@@ -66,4 +66,92 @@ def model_status():
 
 @app.route('/api/v1/model/output')
 def model_output():
-    return 'hi output'
+    data = {}
+    response = {}
+    cmd = 'juju status | grep clearwater-ellis | grep tcp | awk "{print \$5}"'
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                         stderr=subprocess.STDOUT, shell=True)
+    ellis_ip_found = False
+    while p.poll() is None:
+        line = p.stdout.readline().rstrip()
+        print(line)
+        if line:
+            print('Ellis internal IP: %s' % line)
+            cmd = ('. /home/ubuntu/admin-openrc.sh;'
+                   'openstack server list | grep {0}').format(line)
+
+            cmd += '| awk "{print \$9}"'
+            print(cmd)
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                 stderr=subprocess.STDOUT, shell=True)
+            while p.poll() is None:
+                line = p.stdout.readline().rstrip()
+                if line:
+                    print('Ellis external IP: %s' % line)
+                    data['ellis_ip'] = line
+                    ellis_ip_found = True
+        else:
+            response = {'msg': 'Clearwater is not started or there is some errror.'}
+
+    if not ellis_ip_found:
+        response = {'msg': 'Error with getting Ellis IP'}
+
+    cmd = 'juju status | grep clearwater-bono | grep tcp | awk "{print \$5}"'
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                         stderr=subprocess.STDOUT, shell=True)
+    bono_ip_found = False
+    while p.poll() is None:
+        line = p.stdout.readline().rstrip()
+        print(line)
+        if line:
+            print('Bono internal IP: %s' % line)
+            cmd = ('. /home/ubuntu/admin-openrc.sh;'
+                   'openstack server list | grep {0}').format(line)
+
+            cmd += '| awk "{print \$9}"'
+            print(cmd)
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                 stderr=subprocess.STDOUT, shell=True)
+            while p.poll() is None:
+                line = p.stdout.readline().rstrip()
+                if line:
+                    print('Bono external IP: %s' % line)
+                    data['bono_ip'] = line
+                    bono_ip_found = True
+        else:
+            response = {'msg': 'Clearwater is not started or there is some errror.'}
+
+    if not bono_ip_found:
+        response = {'msg': 'Error with getting Bono IP'}
+
+    cmd = 'juju status | grep dns | grep tcp | awk "{print \$5}"'
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                         stderr=subprocess.STDOUT, shell=True)
+    dns_ip_found = False
+    while p.poll() is None:
+        line = p.stdout.readline().rstrip()
+        print(line)
+        if line:
+            print('DNS internal IP: %s' % line)
+            cmd = ('. /home/ubuntu/admin-openrc.sh;'
+                   'openstack server list | grep {0}').format(line)
+
+            cmd += '| awk "{print \$9}"'
+            print(cmd)
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                 stderr=subprocess.STDOUT, shell=True)
+            while p.poll() is None:
+                line = p.stdout.readline().rstrip()
+                if line:
+                    print('DNS external IP: %s' % line)
+                    data['dns_ip'] = line
+                    dns_ip_found = True
+        else:
+            response = {'msg': 'Clearwater is not started or there is some errror.'}
+
+    if not dns_ip_found:
+        response = {'msg': 'Error with getting DNS IP'}
+
+    response['data'] = data
+    resp = make_response(jsonify(response))
+    return resp
