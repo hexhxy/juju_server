@@ -22,10 +22,10 @@ formatter = logging.Formatter('%(asctime)s - %(name)s - '
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
-hdlr = logging.FileHandler('juju_app.log')
-hdlr.setFormatter(formatter)
-hdlr.setLevel(logging.DEBUG)
-logger.addHandler(hdlr)
+#hdlr = logging.FileHandler('juju_app.log')
+#hdlr.setFormatter(formatter)
+#hdlr.setLevel(logging.DEBUG)
+#logger.addHandler(hdlr)
 
 
 @app.route('/')
