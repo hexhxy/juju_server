@@ -160,3 +160,18 @@ def model_output_verbose():
     response = {'data': ''.join(result)}
     resp = make_response(jsonify(response))
     return resp
+
+
+@app.route('/api/v1/model/ellis/configure')
+def model_ellis_configure():
+    cmd = '/home/ubuntu/juju_server/ellis_config.sh'
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                         stderr=subprocess.STDOUT, shell=True)
+    result = []
+    while p.poll() is None:
+        line = p.stdout.readline().rstrip()
+        result.append('\n' + line)
+
+    response = {'data': ''.join(result)}
+    resp = make_response(jsonify(response))
+    return resp
