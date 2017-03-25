@@ -168,10 +168,14 @@ def model_ellis_configure():
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                          stderr=subprocess.STDOUT, shell=True)
     result = []
+    ellis_is_updated = False
     while p.poll() is None:
         line = p.stdout.readline().rstrip()
         result.append('\n' + line)
+        if re.search('successful', line):
+            ellis_is_updated = True
 
-    response = {'data': ''.join(result)}
+    response = {'ellis_ok': ellis_is_updated,
+                'data': ''.join(result)}
     resp = make_response(jsonify(response))
     return resp
