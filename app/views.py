@@ -6,7 +6,6 @@
 # which accompanies this distribution, and is available at
 # http://www.apache.org/licenses/LICENSE-2.0
 ##############################################################################
-import logging
 import subprocess
 
 import re
@@ -14,18 +13,6 @@ from flask import jsonify
 from flask import make_response
 
 from app import app
-
-logger = logging.getLogger('juju')
-ch = logging.StreamHandler()
-formatter = logging.Formatter('%(asctime)s - %(name)s - '
-                              '%(levelname)s - %(message)s')
-ch.setFormatter(formatter)
-logger.addHandler(ch)
-
-#hdlr = logging.FileHandler('juju_app.log')
-#hdlr.setFormatter(formatter)
-#hdlr.setLevel(logging.DEBUG)
-#logger.addHandler(hdlr)
 
 
 @app.route('/')
@@ -56,10 +43,8 @@ def model_status():
         while p.poll() is None:
             line = p.stdout.readline().rstrip()
             if str(line) == '7':
-                response = {
-                                'msg': 'Clearwater has fully started',
-                                'vnf_alive': True
-                            }
+                response = {'msg': 'Clearwater has fully started',
+                            'vnf_alive': True}
             elif line:
                 response = {'msg': '%s out of 7 nodes have started' %
                             str(line)}
@@ -158,5 +143,20 @@ def model_output():
         response = {'msg': 'Error with getting DNS IP'}
 
     response['data'] = data
+    resp = make_response(jsonify(response))
+    return resp
+
+
+@app.route('/api/v1/model/output/verbose')
+def model_output_verbose():
+    cmd = 'juju status'
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                         stderr=subprocess.STDOUT, shell=True)
+    result = []
+    while p.poll() is None:
+        line = p.stdout.readline().rstrip()
+        result.append('\n' + line)
+
+    response = {'data': ''.join(result)}
     resp = make_response(jsonify(response))
     return resp
